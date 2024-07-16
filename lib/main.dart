@@ -1,11 +1,27 @@
 import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:github_application/API/github_repository.dart';
+import 'package:github_application/bloc/github_bloc.dart';
 import 'package:github_application/sign_in_page.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   await Firebase.initializeApp();
-  runApp(const MyApp());
+
+  final GithubRepository githubRepository = GithubRepository();
+
+  runApp(
+    MultiBlocProvider(
+      providers: [
+        BlocProvider<GithubBloc>(
+          create: (context) => GithubBloc(githubRepository),
+        ),
+        // Add other BlocProviders here if needed
+      ],
+      child: MyApp(),
+    ),
+  );
 }
 
 class MyApp extends StatelessWidget {
