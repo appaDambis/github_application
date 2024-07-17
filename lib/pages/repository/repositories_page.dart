@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:github_application/bloc/github_bloc.dart';
+import 'package:github_application/pages/repository/repositories_file_page.dart';
 
 class RepositoriesPage extends StatefulWidget {
   final String username;
@@ -46,6 +47,18 @@ class _RepositoriesPageState extends State<RepositoriesPage> {
                       Text('Forks: ${repo.forks}'),
                     ],
                   ),
+                  onTap: () {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (context) => RepositoryFilesPage(
+                          username: widget.username,
+                          repoName: repo.name,
+                          token: widget.token,
+                        ),
+                      ),
+                    );
+                  },
                 );
               },
             );

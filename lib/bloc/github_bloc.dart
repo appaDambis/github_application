@@ -29,6 +29,18 @@ class SearchUser extends GithubEvent {
   List<Object> get props => [username, token];
 }
 
+class FetchRepositoryFiles extends GithubEvent {
+  final String username;
+  final String repoName;
+  final String token;
+
+  FetchRepositoryFiles({
+    required this.username,
+    required this.repoName,
+    required this.token,
+  });
+}
+
 // States
 abstract class GithubState extends Equatable {
   @override
@@ -68,6 +80,12 @@ class GithubError extends GithubState {
   List<Object> get props => [message];
 }
 
+class GithubFilesLoaded extends GithubState {
+  final List<File> files;
+
+  GithubFilesLoaded({required this.files});
+}
+
 // BLoC
 class GithubBloc extends Bloc<GithubEvent, GithubState> {
   final GithubRepository githubRepository;
@@ -75,6 +93,7 @@ class GithubBloc extends Bloc<GithubEvent, GithubState> {
   GithubBloc(this.githubRepository) : super(GithubInitial()) {
     on<FetchUserData>(_onFetchUserData);
     on<SearchUser>(_onSearchUser);
+    on<FetchRepositoryFiles>(_onFetchRepositoryFiles);
   }
 
   void _onFetchUserData(FetchUserData event, Emitter<GithubState> emit) async {
@@ -97,6 +116,21 @@ class GithubBloc extends Bloc<GithubEvent, GithubState> {
       final repositories = await githubRepository.searchUserRepositories(
           event.username, event.token);
       emit(GithubSearchLoaded(user: user, repositories: repositories));
+    } catch (e) {
+      emit(GithubError(e.toString()));
+    }
+  }
+
+  void _onFetchRepositoryFiles(
+      FetchRepositoryFiles event, Emitter<GithubState> emit) async {
+    emit(GithubLoading());
+    try {
+      final files = await githubRepository.fetchRepositoryFiles(
+        event.username,
+        event.repoName,
+        event.token,
+      );
+      emit(GithubFilesLoaded(files: files));
     } catch (e) {
       emit(GithubError(e.toString()));
     }

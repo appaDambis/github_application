@@ -6,8 +6,9 @@ import 'package:github_application/pages/issues_page.dart';
 import 'package:github_application/pages/organixations_page.dart';
 import 'package:github_application/pages/projects_page.dart';
 import 'package:github_application/pages/pull_request_page.dart';
-import 'package:github_application/pages/repositories_page.dart';
+import 'package:github_application/pages/repository/repositories_page.dart';
 import 'package:github_application/pages/starred_page.dart';
+import 'package:github_application/pages/user_page.dart';
 
 class HomePage extends StatefulWidget {
   final String token;
@@ -52,13 +53,10 @@ class _HomePageState extends State<HomePage> {
                   icon: const Icon(Icons.search),
                   onPressed: () {
                     final username = _searchController.text;
-                    context
-                        .read<GithubBloc>()
-                        .add(SearchUser(username, widget.token));
                     Navigator.push(
                       context,
                       MaterialPageRoute(
-                        builder: (context) => RepositoriesPage(
+                        builder: (context) => UserPage(
                           username: username,
                           token: widget.token,
                         ),

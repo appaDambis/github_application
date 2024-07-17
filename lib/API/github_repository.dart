@@ -59,4 +59,44 @@ class GithubRepository {
       throw Exception('Failed to load repositories');
     }
   }
+
+  Future<List<File>> fetchRepositoryFiles(
+      String username, String repoName, String token) async {
+    final String apiUrl =
+        'https://api.github.com/repos/$username/$repoName/contents';
+
+    try {
+      final response = await http.get(
+        Uri.parse(apiUrl),
+        headers: {
+          'Authorization': 'Bearer $token',
+          'Accept': 'application/vnd.github.v3+json',
+        },
+      );
+
+      if (response.statusCode == 200) {
+        List<dynamic> jsonData = json.decode(response.body);
+        List<File> files = jsonData.map((e) => File.fromJson(e)).toList();
+        return files;
+      } else {
+        throw Exception('Failed to load files: ${response.statusCode}');
+      }
+    } catch (e) {
+      throw Exception('Failed to load files: $e');
+    }
+  }
+}
+
+class File {
+  final String name;
+  final String path;
+
+  File({required this.name, required this.path});
+
+  factory File.fromJson(Map<String, dynamic> json) {
+    return File(
+      name: json['name'],
+      path: json['path'],
+    );
+  }
 }
