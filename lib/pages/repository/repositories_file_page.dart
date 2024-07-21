@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:github_application/bloc/github_bloc.dart';
+import 'package:github_application/bloc/github_event.dart';
+import 'package:github_application/bloc/github_state.dart';
 // Assume you have a File model
 
 class RepositoryFilesPage extends StatefulWidget {

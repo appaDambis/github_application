@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:github_application/bloc/github_bloc.dart';
-import 'package:github_application/pages/repository/repositories_file_page.dart';
+import 'package:github_application/bloc/github_event.dart';
+import 'package:github_application/bloc/github_state.dart';
+import 'package:url_launcher/url_launcher.dart';
 
 class RepositoriesPage extends StatefulWidget {
   final String username;
@@ -39,7 +41,7 @@ class _RepositoriesPageState extends State<RepositoriesPage> {
                 final repo = repositories[index];
                 return ListTile(
                   title: Text(repo.name),
-                  subtitle: Text(repo.description ?? 'No description'),
+                  subtitle: Text(repo.description),
                   trailing: Column(
                     crossAxisAlignment: CrossAxisAlignment.end,
                     children: [
@@ -47,25 +49,25 @@ class _RepositoriesPageState extends State<RepositoriesPage> {
                       Text('Forks: ${repo.forks}'),
                     ],
                   ),
-                  onTap: () {
-                    Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                        builder: (context) => RepositoryFilesPage(
-                          username: widget.username,
-                          repoName: repo.name,
-                          token: widget.token,
-                        ),
-                      ),
-                    );
+                  onTap: () async {
+                    final url = repo.htmlUrl;
+                    if (await launch(url)) {
+                      await launch(url);
+                    } else {
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        SnackBar(content: Text('Could not launch $url')),
+                      );
+                    }
                   },
                 );
               },
             );
           } else if (state is GithubError) {
-            return Center(child: Text('Failed to load data: ${state.message}'));
+            return Center(
+                child: Text(
+                    'Failed to load starred repositories: ${state.message}'));
           } else {
-            return const Center(child: Text('Press the button to fetch data.'));
+            return const Center(child: Text('No starred repositories found.'));
           }
         },
       ),

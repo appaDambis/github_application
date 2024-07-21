@@ -1,8 +1,12 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:github_application/bloc/github_bloc.dart';
+import 'package:github_application/bloc/github_event.dart';
+import 'package:github_application/bloc/github_state.dart';
+import 'package:url_launcher/url_launcher.dart';
 
 class UserPage extends StatefulWidget {
   final String username;
@@ -15,32 +19,90 @@ class UserPage extends StatefulWidget {
 }
 
 class _UserPageState extends State<UserPage> {
+  final FirebaseAuth _auth = FirebaseAuth.instance;
   final FirebaseMessaging _firebaseMessaging = FirebaseMessaging.instance;
   String? _fcmToken;
+  bool _isSubscribed = false;
 
   @override
   void initState() {
     super.initState();
-    context.read<GithubBloc>().add(SearchUser(widget.username, widget.token));
-
-    _firebaseMessaging.getToken().then((token) {
-      setState(() {
-        _fcmToken = token;
-      });
+    _auth.authStateChanges().listen((User? user) {
+      if (user != null) {
+        _firebaseMessaging.getToken().then((token) {
+          setState(() {
+            _fcmToken = token;
+          });
+          if (_fcmToken != null) {
+            FirebaseFirestore.instance.collection('users').doc(user.uid).set({
+              'fcmToken': _fcmToken,
+            });
+          }
+        });
+      }
     });
+    _checkSubscriptionStatus();
+    context.read<GithubBloc>().add(SearchUser(widget.username, widget.token));
+  }
+
+  void _checkSubscriptionStatus() async {
+    User? user = _auth.currentUser;
+    if (user != null) {
+      DocumentSnapshot snapshot = await FirebaseFirestore.instance
+          .collection('subscriptions')
+          .doc('${user.uid}_${widget.username}')
+          .get();
+
+      setState(() {
+        _isSubscribed = snapshot.exists;
+      });
+    }
   }
 
   void _subscribeToUser() async {
-    if (_fcmToken != null) {
-      // Save subscription to Firestore
-      await FirebaseFirestore.instance.collection('subscriptions').add({
+    User? user = _auth.currentUser;
+    if (user != null && _fcmToken != null) {
+      await FirebaseFirestore.instance
+          .collection('subscriptions')
+          .doc('${user.uid}_${widget.username}')
+          .set({
         'username': widget.username,
         'fcmToken': _fcmToken,
+        'userId': user.uid,
       });
 
-      // Show confirmation
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text('Subscribed to ${widget.username}')),
+      );
+
+      setState(() {
+        _isSubscribed = true;
+      });
+    } else {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Please sign in to subscribe')),
+      );
+    }
+  }
+
+  void _unsubscribeFromUser() async {
+    User? user = _auth.currentUser;
+    if (user != null) {
+      await FirebaseFirestore.instance
+          .collection('subscriptions')
+          .doc('${user.uid}_${widget.username}')
+          .delete();
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Unsubscribed from ${widget.username}')),
+      );
+
+      setState(() {
+        _isSubscribed = false;
+      });
+    } else {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Please sign in to unsubscribe')),
       );
     }
   }
@@ -76,11 +138,11 @@ class _UserPageState extends State<UserPage> {
                   ),
                   const SizedBox(height: 16),
                   Text(
-                    'Name: ${user.name ?? 'Not provided'}',
+                    'Name: ${user.name}',
                     style: const TextStyle(fontSize: 16),
                   ),
                   Text(
-                    'Bio: ${user.bio ?? 'Not provided'}',
+                    'Bio: ${user.bio}',
                     style: const TextStyle(fontSize: 16),
                   ),
                   const SizedBox(height: 16),
@@ -89,10 +151,15 @@ class _UserPageState extends State<UserPage> {
                     style: const TextStyle(fontSize: 16),
                   ),
                   const SizedBox(height: 32),
-                  ElevatedButton(
-                    onPressed: _subscribeToUser,
-                    child: Text('Subscribe'),
-                  ),
+                  _isSubscribed
+                      ? ElevatedButton(
+                          onPressed: _unsubscribeFromUser,
+                          child: Text('Unsubscribe'),
+                        )
+                      : ElevatedButton(
+                          onPressed: _subscribeToUser,
+                          child: Text('Subscribe'),
+                        ),
                   const SizedBox(height: 32),
                   const Text(
                     'Repositories',
@@ -105,7 +172,7 @@ class _UserPageState extends State<UserPage> {
                         final repo = repositories[index];
                         return ListTile(
                           title: Text(repo.name),
-                          subtitle: Text(repo.description ?? 'No description'),
+                          subtitle: Text(repo.description),
                           trailing: Column(
                             crossAxisAlignment: CrossAxisAlignment.end,
                             children: [
@@ -113,6 +180,17 @@ class _UserPageState extends State<UserPage> {
                               Text('Forks: ${repo.forks}'),
                             ],
                           ),
+                          onTap: () async {
+                            final url = repo.htmlUrl;
+                            if (await launch(url)) {
+                              await launch(url);
+                            } else {
+                              ScaffoldMessenger.of(context).showSnackBar(
+                                SnackBar(
+                                    content: Text('Could not launch $url')),
+                              );
+                            }
+                          },
                         );
                       },
                     ),

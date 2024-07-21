@@ -1,35 +1,10 @@
-class User {
-  final String login;
-  final String avatarUrl;
-  final String name;
-  final String bio;
-  final int publicRepos;
-
-  User({
-    required this.login,
-    required this.avatarUrl,
-    required this.name,
-    required this.bio,
-    required this.publicRepos,
-  });
-
-  factory User.fromJson(Map<String, dynamic> json) {
-    return User(
-      login: json['login'],
-      avatarUrl: json['avatar_url'],
-      name: json['name'] ?? '',
-      bio: json['bio'] ?? '',
-      publicRepos: json['public_repos'],
-    );
-  }
-}
-
 class Repository {
   final String name;
   final String description;
   final String language;
   final int stars;
   final int forks;
+  final String htmlUrl;
 
   Repository({
     required this.name,
@@ -37,6 +12,7 @@ class Repository {
     required this.language,
     required this.stars,
     required this.forks,
+    required this.htmlUrl,
   });
 
   factory Repository.fromJson(Map<String, dynamic> json) {
@@ -46,6 +22,7 @@ class Repository {
       language: json['language'] ?? '',
       stars: json['stargazers_count'],
       forks: json['forks_count'],
+      htmlUrl: json['html_url'],
     );
   }
 }

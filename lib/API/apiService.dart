@@ -1,6 +1,7 @@
 import 'dart:convert';
 
-import 'package:github_application/models/models.dart';
+import 'package:github_application/models/repository_model.dart';
+import 'package:github_application/models/user_model.dart';
 import 'package:http/http.dart' as http;
 
 class ApiService {

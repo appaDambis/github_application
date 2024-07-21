@@ -1,9 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:github_application/bloc/github_bloc.dart';
+import 'package:github_application/bloc/github_event.dart';
+import 'package:github_application/bloc/github_state.dart';
 import 'package:github_application/pages/discussions_page.dart';
 import 'package:github_application/pages/issues_page.dart';
-import 'package:github_application/pages/organixations_page.dart';
 import 'package:github_application/pages/projects_page.dart';
 import 'package:github_application/pages/pull_request_page.dart';
 import 'package:github_application/pages/repository/repositories_page.dart';
@@ -25,7 +26,7 @@ class _HomePageState extends State<HomePage> {
   @override
   void initState() {
     super.initState();
-    // Trigger fetching user data when the page loads
+
     context.read<GithubBloc>().add(FetchUserData(widget.token));
   }
 
@@ -94,11 +95,11 @@ class _HomePageState extends State<HomePage> {
                     ),
                     const SizedBox(height: 16),
                     Text(
-                      'Name: ${user.name ?? 'Not provided'}',
+                      'Name: ${user.name}',
                       style: const TextStyle(fontSize: 16),
                     ),
                     Text(
-                      'Bio: ${user.bio ?? 'Not provided'}',
+                      'Bio: ${user.bio}',
                       style: const TextStyle(fontSize: 16),
                     ),
                     const SizedBox(height: 16),
@@ -139,12 +140,6 @@ class _HomePageState extends State<HomePage> {
                     ),
                     _buildMenuItem(
                       context,
-                      'Organizations',
-                      Icons.people_outline,
-                      _navigateToOrganizations,
-                    ),
-                    _buildMenuItem(
-                      context,
                       'Starred Repositories',
                       Icons.star_outline,
                       _navigateToStarred,
@@ -177,28 +172,40 @@ class _HomePageState extends State<HomePage> {
   void _navigateToPullRequests() {
     Navigator.push(
       context,
-      MaterialPageRoute(builder: (context) => PullRequestsPage()),
+      MaterialPageRoute(
+          builder: (context) => PullRequestsPage(
+                token: widget.token,
+              )),
     );
   }
 
   void _navigateToIssues() {
     Navigator.push(
       context,
-      MaterialPageRoute(builder: (context) => IssuesPage()),
+      MaterialPageRoute(
+          builder: (context) => IssuesPage(
+                token: widget.token,
+              )),
     );
   }
 
   void _navigateToDiscussions() {
     Navigator.push(
       context,
-      MaterialPageRoute(builder: (context) => DiscussionsPage()),
+      MaterialPageRoute(
+          builder: (context) => DiscussionsPage(
+                token: widget.token,
+              )),
     );
   }
 
   void _navigateToProjects() {
     Navigator.push(
       context,
-      MaterialPageRoute(builder: (context) => ProjectsPage()),
+      MaterialPageRoute(
+          builder: (context) => ProjectsPage(
+                token: widget.token,
+              )),
     );
   }
 
@@ -213,17 +220,13 @@ class _HomePageState extends State<HomePage> {
     );
   }
 
-  void _navigateToOrganizations() {
-    Navigator.push(
-      context,
-      MaterialPageRoute(builder: (context) => OrganizationsPage()),
-    );
-  }
-
   void _navigateToStarred() {
     Navigator.push(
       context,
-      MaterialPageRoute(builder: (context) => StarredPage()),
+      MaterialPageRoute(
+          builder: (context) => StarredPage(
+                token: widget.token,
+              )),
     );
   }
 }

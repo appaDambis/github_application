@@ -2,26 +2,28 @@ const functions = require('firebase-functions');
 const admin = require('firebase-admin');
 admin.initializeApp();
 
-exports.notifyOnRepoChange = functions.firestore
-    .document('repositories/{repoId}')
-    .onUpdate(async (change, context) => {
-        const repo = change.after.data();
-        const username = repo.username;
+exports.sendNotificationOnSubscribe = functions.firestore
+  .document('subscriptions/{subscriptionId}')
+  .onCreate(async (snapshot, context) => {
+    const subscription = snapshot.data();
+    const payload = {
+      notification: {
+        title: 'Subscribed',
+        body: `You have subscribed to ${subscription.username}.`,
+      },
+    };
+    await admin.messaging().sendToDevice(subscription.fcmToken, payload);
+  });
 
-        const subscriptions = await admin.firestore().collection('subscriptions')
-            .where('username', '==', username).get();
-
-        const tokens = [];
-        subscriptions.forEach(subscription => {
-            tokens.push(subscription.data().fcmToken);
-        });
-
-        const payload = {
-            notification: {
-                title: 'Repository Updated',
-                body: `${username} has updated a repository.`,
-            },
-        };
-
-        return admin.messaging().sendToDevice(tokens, payload);
-    });
+exports.sendNotificationOnUnsubscribe = functions.firestore
+  .document('subscriptions/{subscriptionId}')
+  .onDelete(async (snapshot, context) => {
+    const subscription = snapshot.data();
+    const payload = {
+      notification: {
+        title: 'Unsubscribed',
+        body: `You have unsubscribed from ${subscription.username}.`,
+      },
+    };
+    await admin.messaging().sendToDevice(subscription.fcmToken, payload);
+  });
